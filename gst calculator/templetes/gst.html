@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Singapore GST Calculator (9%)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1d4ed8, #7c3aed);
+      padding: 16px;
+    }
+
+    .card {
+      background: #ffffff;
+      padding: 26px 30px;
+      border-radius: 18px;
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.25);
+      max-width: 520px;
+      width: 100%;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      margin: 0;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-weight: 600;
+    }
+
+    .subtitle {
+      font-size: 0.86rem;
+      color: #6b7280;
+      margin: 4px 0 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.9rem;
+      margin-bottom: 4px;
+      font-weight: 500;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
+    }
+
+    input[type="number"]:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+      transform: translateY(-1px);
+    }
+
+    input[readonly] {
+      background: #f9fafb;
+      cursor: default;
+    }
+
+    .row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .row > div {
+      flex: 1;
+    }
+
+    button {
+      width: 100%;
+      padding: 11px 16px;
+      margin-top: 10px;
+      border-radius: 999px;
+      border: none;
+      background: #4f46e5;
+      color: white;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.15s ease;
+    }
+
+    button:hover {
+      background: #4338ca;
+      box-shadow: 0 12px 24px rgba(79, 70, 229, 0.35);
+      transform: translateY(-1px);
+    }
+
+    button:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    .error {
+      color: #b91c1c;
+      font-size: 0.8rem;
+      margin-top: 6px;
+      min-height: 16px;
+    }
+
+    .results-card {
+      margin-top: 16px;
+      background: #f9fafb;
+      border-radius: 14px;
+      padding: 10px 12px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 4px;
+    }
+
+    .results-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .results-caption {
+      font-size: 0.75rem;
+      color: #6b7280;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 4px;
+      font-size: 0.9rem;
+    }
+
+    thead {
+      background: #eef2ff;
+    }
+
+    th, td {
+      padding: 7px 6px;
+      text-align: right;
+      border-bottom: 1px solid #e5e7eb;
+      white-space: nowrap;
+    }
+
+    th:first-child,
+    td:first-child {
+      text-align: left;
+    }
+
+    .muted {
+      color: #6b7280;
+      font-size: 0.8rem;
+    }
+
+    .result-row {
+      font-weight: 600;
+    }
+
+    .footer-note {
+      margin-top: 10px;
+      font-size: 0.76rem;
+      color: #6b7280;
+      text-align: center;
+    }
+
+    .footer-note span {
+      font-weight: 600;
+      color: #111827;
+    }
+
+    @media (max-width: 480px) {
+      .card {
+        padding: 18px 18px;
+      }
+      h1 {
+        font-size: 1.2rem;
+      }
+      th, td {
+        font-size: 0.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <div class="card-header">
+      <h1>Singapore GST Calculator</h1>
+      <div class="badge">GST {{ gst_rate }}% • SG</div>
+    </div>
+
+    <p class="subtitle">
+      Enter the item price <strong>including GST</strong> to see the original price before GST and the GST amount.
+    </p>
+
+    <form method="POST" action="/">
+      <div class="row">
+        <div>
+          <label for="priceInclusive">Price including GST (S$)</label>
+          <input
+            type="number"
+            id="priceInclusive"
+            name="price_inclusive"
+            placeholder="e.g. 109.00"
+            step="0.01"
+            min="0"
+            value="{% if result %}{{ '%.2f'|format(result.price_inclusive) }}{% endif %}"
+          />
+        </div>
+        <div>
+          <label for="gstRate">GST rate (%)</label>
+          <input
+            type="number"
+            id="gstRate"
+            value="{{ gst_rate }}"
+            readonly
+          />
+        </div>
+      </div>
+
+      <button type="submit">Calculate</button>
+    </form>
+
+    <div id="error" class="error">
+      {% if error %}{{ error }}{% endif %}
+    </div>
+
+    <div class="results-card">
+      <div class="results-header">
+        <div class="results-title">Breakdown</div>
+        <div class="results-caption">All values in Singapore dollars (S$)</div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th>Amount (S$)</th>
+            <th>Verification</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="result-row">
+            <td>Original price (before GST)</td>
+            <td id="originalPrice">
+              {% if result %}
+                {{ '%.2f'|format(result.original_price) }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td class="muted">Calculated from input</td>
+          </tr>
+          <tr class="result-row">
+            <td>GST amount ({{ gst_rate }}%)</td>
+            <td id="gstAmount">
+              {% if result %}
+                {{ '%.2f'|format(result.gst_amount) }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td class="muted">Inclusive − Original</td>
+          </tr>
+          <tr>
+            <td>Price including GST</td>
+            <td id="priceInclusiveDisplay">
+              {% if result %}
+                {{ '%.2f'|format(result.price_inclusive) }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td class="muted">User input</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="footer-note">
+      Formula: <span>Original price = Inclusive ÷ (1 + {{ gst_rate }} / 100)</span> &nbsp;•&nbsp;
+      <span>GST amount = Inclusive − Original</span>
+    </p>
+  </div>
+
+</body>
+</html>
