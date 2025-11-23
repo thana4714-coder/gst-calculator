@@ -1,4 +1,3 @@
-# app.py
 from flask import Flask, render_template, request
 
 app = Flask(__name__)
@@ -42,6 +41,11 @@ def index():
     )
 
 
+# Simple health check endpoint for UptimeRobot / Render
+@app.route("/health")
+def health():
+    return "OK", 200
+
+
 if __name__ == "__main__":
-    # For local development
     app.run(debug=True)
