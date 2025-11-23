@@ -1,8 +1,10 @@
 from flask import Flask, render_template, request
+import os
 
 app = Flask(__name__)
 
-GST_RATE = 9  # Singapore GST 9%
+# Default GST rate comes from environment variable, or 9% if not set
+GST_RATE_DEFAULT = float(os.getenv("GST_RATE", "9"))
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -10,38 +12,57 @@ def index():
     result = None
     error = None
 
+    # This is the rate we will actually use in the calculation
+    used_gst_rate = GST_RATE_DEFAULT
+
     if request.method == "POST":
         price_str = request.form.get("price_inclusive", "").strip()
+        gst_rate_str = request.form.get("gst_rate", "").strip()
 
+        # 1. Handle GST rate input
+        if gst_rate_str:
+            try:
+                used_gst_rate = float(gst_rate_str)
+                if used_gst_rate < 0:
+                    error = "GST rate cannot be negative."
+            except ValueError:
+                error = "Please enter a valid GST rate."
+
+        # 2. Handle price input
         if not price_str:
-            error = "Please enter a price including GST."
+            if not error:  # only overwrite if no GST error yet
+                error = "Please enter a price including GST."
         else:
             try:
                 price_incl = float(price_str)
                 if price_incl <= 0:
-                    error = "Price must be more than 0."
+                    if not error:
+                        error = "Price must be more than 0."
                 else:
-                    divisor = 1 + GST_RATE / 100
-                    original = price_incl / divisor
-                    gst_amount = price_incl - original
+                    if not error:  # only calculate if no previous error
+                        divisor = 1 + used_gst_rate / 100
+                        original = price_incl / divisor
+                        gst_amount = price_incl - original
 
-                    result = {
-                        "price_inclusive": price_incl,
-                        "original_price": original,
-                        "gst_amount": gst_amount,
-                    }
+                        result = {
+                            "price_inclusive": price_incl,
+                            "original_price": original,
+                            "gst_amount": gst_amount,
+                            "gst_rate": used_gst_rate,
+                        }
             except ValueError:
-                error = "Please enter a valid number."
+                if not error:
+                    error = "Please enter a valid number."
 
     return render_template(
         "index.html",
-        gst_rate=GST_RATE,
+        gst_rate_default=GST_RATE_DEFAULT,  # the default from env
+        used_gst_rate=used_gst_rate,        # the rate used this time
         result=result,
         error=error,
     )
 
 
-# Simple health check endpoint for UptimeRobot / Render
 @app.route("/health")
 def health():
     return "OK", 200
